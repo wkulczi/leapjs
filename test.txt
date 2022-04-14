@@ -1,0 +1,15 @@
+[
+  [
+    {
+      position: [1,2,3,4],
+      direction: [1,2,3,4],
+      progress: 1,
+      id: 23,
+      handIds: [16],
+      pointableIds: [Array],
+      duration: 104169,
+      state: 'stop',
+      type: 'keyTap'
+    }
+  ]
+]
