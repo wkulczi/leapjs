@@ -1,50 +1,68 @@
-var fs = require('fs');
+var LeapHelper = require('./leapHelper')
+var Leap = require('leapjs');
+
+///for debugging
+const util = require('util')
+const { Console } = require("console");
+// get fs module for creating write streams
+const fs = require("fs");
+
+// make a new logger
+const myLogger = new Console({
+  stdout: fs.createWriteStream("normalStdout.txt"),
+  stderr: fs.createWriteStream("errStdErr.txt"),
+});
+///for debugging end
 
 
-{
-    hand: 0/1            //left/right
-    finger: 0/1/2/3/4    //0 - thumb...
-    gesture: gesture.type
-    direction: getGesture(gesture)
-}
+var controllerOptions = { enableGestures: true, useAllPlugins: true }; //todo obczaj co za pluginy są
+// https://github.com/leapmotion/leapjs-plugins
 
-function parseGestures(gestures, handInfo){
-    var gestureList = [];
-    //tu ta lista chyba list z gestami, to do zrobienia w środę jak będę miał sprzęt
-}
+var frameBuffer = [];
+var FRAME_BUFFER_SIZE = 10; //N frames with hands
 
-function parseGestureInfo(gesture, handInfo){
-    return {
-        hand: identifyHand(gesture.handIds, handInfo),
-        finger: identifyHand(gesture.pointableIds, handInfo),
-        gesture: gesture.type,
-        direction: getGesture(gesture)
+var controller = Leap.loop(controllerOptions, function (frame) {
+  if (frame.hands.length) {
+    if (frameBuffer.length < FRAME_BUFFER_SIZE) {
+      frameBuffer.push(frame)
     }
-}
-
-//circle gesture has:
-// dot product says whether its clockwise or counterclockwise
-
-//swipe gesture has:
-// direction: left/right/top/down
-
-function getGesture(gesture) {
-    switch (gesture.type) {
-        case "circle":
-            var pointableID = gesture.pointableIds[0];
-            var direction = frame.pointable(pointableID).direction;
-            var dotProduct = Leap.vec3.dot(direction, gesture.normal);
-            return dotProduct > 0 ? 'LM_CIRCLE_CLOCKWISE' : 'LM_CIRCLE_COUNTERCLOCKWISE'
-        case "keyTap":
-            return 'LM_KEY_TAP'
-        case "screenTap":
-            return 'LM_KEY_TAP'
-        case "swipe":
-            var isHorizontal = Math.abs(gesture.direction[0]) > Math.abs(gesture.direction[1]);
-            if (isHorizontal) {
-                return gesture.direction[0] > 0 ? 'LM_SWIPE_RIGHT' : 'LM_SWIPE_LEFT';
-            } else { //vertical
-                return gesture.direction[1] > 0 ? 'LM_SWIPE_UP' : 'LM_SWIPE_DOWN';
-            }
+    else {
+      frameBufferParser(frameBuffer)
+      frameBuffer = [];
     }
+  }
+});
+
+sawOnce = false;
+function frameBufferParser(frames) {
+
+  //determines whether gestures occured in FRAME_BUFFER_SIZE window of frames
+  const hasAnyGestures = frames.map(value => value.gestures.length).some((gestureCounter) => gestureCounter > 0);
+
+  if (hasAnyGestures) {
+    const handInfo = LeapHelper.parseHandInfo(frames)
+
+    /*PARSE GESTURES START*/
+
+    LeapHelper.addGestureDirection(frames);
+    const dedupedGestures = LeapHelper.dedupContinuousMoves(frames.map(value => value.gestures).flat());
+
+    /*PARSE GESTURES END*/
+
+
+    // if (!sawOnce) {
+      // myLogger.log(frames.map(value => value.gestures));
+
+      // console.log(util.inspect(frames), { showHidden: false, depth: null, colors: true });
+      for (const gesture of dedupedGestures) {
+        console.log(LeapHelper.parseGestureInfo(gesture, handInfo))
+      }
+      // console.log(util.inspect(dedupContinuousMoves(frames.map(value => value.gestures).flat()), { showHidden: false, depth: null, colors: true }))
+      // console.log(util.inspect(handInfo, { showHidden: false, depth: null, colors: true }))
+      // myLogger.log(handInfo.map(value => value.info));
+      sawOnce = true;
+    // }
+
+  }
 }
+// controller.setBackground(true);  //jak to zrobisz to będzie w tle też odbierać
