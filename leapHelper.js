@@ -2,7 +2,6 @@ var _ = require('lodash');
 var Leap = require('leapjs');
 module.exports = {
 
-
   /*
 input => list of leapjs.Frames
 

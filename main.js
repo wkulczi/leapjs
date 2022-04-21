@@ -1,21 +1,7 @@
 var LeapHelper = require('./leapHelper')
 var Leap = require('leapjs');
 
-///for debugging
-const util = require('util')
-const { Console } = require("console");
-// get fs module for creating write streams
-const fs = require("fs");
-
-// make a new logger
-const myLogger = new Console({
-  stdout: fs.createWriteStream("normalStdout.txt"),
-  stderr: fs.createWriteStream("errStdErr.txt"),
-});
-///for debugging end
-
-
-var controllerOptions = { enableGestures: true, useAllPlugins: true }; //todo obczaj co za pluginy są
+var controllerOptions = { enableGestures: true };
 // https://github.com/leapmotion/leapjs-plugins
 
 var frameBuffer = [];
@@ -49,20 +35,10 @@ function frameBufferParser(frames) {
 
     /*PARSE GESTURES END*/
 
-
-    // if (!sawOnce) {
-      // myLogger.log(frames.map(value => value.gestures));
-
-      // console.log(util.inspect(frames), { showHidden: false, depth: null, colors: true });
       for (const gesture of dedupedGestures) {
         console.log(LeapHelper.parseGestureInfo(gesture, handInfo))
       }
-      // console.log(util.inspect(dedupContinuousMoves(frames.map(value => value.gestures).flat()), { showHidden: false, depth: null, colors: true }))
-      // console.log(util.inspect(handInfo, { showHidden: false, depth: null, colors: true }))
-      // myLogger.log(handInfo.map(value => value.info));
-      sawOnce = true;
-    // }
 
   }
 }
-// controller.setBackground(true);  //jak to zrobisz to będzie w tle też odbierać
+controller.setBackground(true);  //jak to zrobisz to będzie w tle też odbierać
